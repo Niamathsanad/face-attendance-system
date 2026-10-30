@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Reports & analytics{% endblock %}
+{% block content %}
+<h4 class="mb-1">Reports & analytics</h4><div class="small-muted mb-3">Times are shown in {{ tz }}. Absent = expected but no Present record.</div>
+<form class="card p-3 mb-3" method="get"><input type="hidden" name="run" value="1"><div class="row g-2">
+  <div class="col-md-3"><label class="form-label small-muted mb-0">Report type</label><select class="form-select" name="kind">
+    {% for k, v in kinds.items() %}<option value="{{ k }}" {{ 'selected' if p.kind == k }}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">Reference date (day / week / month)</label><input class="form-control" type="date" name="ref_date" value="{{ p.ref_date }}"></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">Student / employee ID</label><input class="form-control" name="student_code" value="{{ p.student_code }}" placeholder="for student report"></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">Department</label><select class="form-select" name="department"><option value="">-</option>
+    {% for d in groups.departments %}<option {{ 'selected' if d == p.department }}>{{ d }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">Class</label><select class="form-select" name="class_name"><option value="">-</option>
+    {% for c in groups.classes %}<option {{ 'selected' if c == p.class_name }}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">From (student / group)</label><input class="form-control" type="date" name="date_from" value="{{ p.date_from }}"></div>
+  <div class="col-md-3"><label class="form-label small-muted mb-0">To (student / group)</label><input class="form-control" type="date" name="date_to" value="{{ p.date_to }}"></div>
+  <div class="col-md-3 d-grid align-items-end"><button class="btn btn-primary mt-auto"><i class="bi bi-search"></i> Generate report</button></div>
+</div></form>
+{% if report %}
+  {% set qs = request.query_string.decode() %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div><h5 class="mb-0">{{ report.title }}</h5><div class="small-muted">{{ report.date_from }} to {{ report.date_to }} ({{ report.timezone }})</div></div>
+    <div class="d-flex gap-2"><a class="btn btn-outline-success" href="{{ url_for('reports.export') }}?{{ qs }}&format=csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a class="btn btn-success" href="{{ url_for('reports.export') }}?{{ qs }}&format=xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a></div></div>
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Expected</div><div class="fs-4 fw-bold">{{ report.summary.expected }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Present</div><div class="fs-4 fw-bold text-success">{{ report.summary.present }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Absent</div><div class="fs-4 fw-bold text-danger">{{ report.summary.absent }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Attendance %</div><div class="fs-4 fw-bold">{{ '-' if report.summary.percentage is none else report.summary.percentage ~ '%' }}</div></div></div></div>
+  {% if chart %}<div class="card p-3 mb-3"><h6>Present vs absent by date</h6><div class="chart-box"><canvas id="reportChart"></canvas></div>
+    <script type="application/json" id="chartData">{{ chart|tojson }}</script></div>{% endif %}
+  <div class="card mb-3"><div class="card-body pb-0"><h6>Per-person summary</h6></div><div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>ID</th><th>Name</th><th>Dept / Class</th><th>Sessions</th><th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody>
+    {% for r in report.per_student.to_dict('records') %}<tr><td>{{ r.student_code }}</td><td>{{ r.full_name }}</td><td>{{ r.department }} / {{ r.class_name }}</td><td>{{ r.sessions }}</td><td>{{ r.present }}</td><td>{{ r.absent }}</td><td>{{ r.percentage }}%</td></tr>
+    {% else %}<tr><td colspan="7" class="text-center text-muted py-3">No sessions in this period.</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><div class="card-body pb-0"><h6>Detailed rows {% if report.table|length > 200 %}<span class="small-muted">(first 200 shown; exports contain all {{ report.table|length }})</span>{% endif %}</h6></div>
+    <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>{% for c in report.table.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead><tbody>
+    {% for row in report.table.head(200).values.tolist() %}<tr>{% for v in row %}<td>{{ v }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="11" class="text-center text-muted py-3">No data.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if chart %}<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>{% endif %}{% endblock %}

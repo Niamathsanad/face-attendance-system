@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Registered people{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Registered people <span class="badge badge-soft-secondary">{{ rows|length }}</span></h4>
+  <div class="d-flex gap-2">
+    <form method="post" action="{{ url_for('students.sync_folder') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-primary" title="Enroll all photos found in the known_faces folder"><i class="bi bi-folder-symlink"></i> Sync from known_faces folder</button></form>
+    <a href="{{ url_for('students.register') }}" class="btn btn-primary"><i class="bi bi-person-plus"></i> Register person</a></div>
+</div>
+<form class="card p-3 mb-3" method="get"><div class="row g-2">
+  <div class="col-md-4"><input class="form-control" name="q" value="{{ q }}" placeholder="Search by ID or name"></div>
+  <div class="col-md-3"><select class="form-select" name="department"><option value="">All departments</option>
+    {% for d in groups.departments %}<option {{ 'selected' if d == department }}>{{ d }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><select class="form-select" name="class_name"><option value="">All classes</option>
+    {% for c in groups.classes %}<option {{ 'selected' if c == class_name }}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="col-md-2 d-grid"><button class="btn btn-outline-primary">Filter</button></div></div></form>
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Class</th><th>Registered</th><th>Consent</th><th>Face data</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for s in rows %}
+    <tr><td><strong>{{ s.student_code }}</strong></td><td>{{ s.full_name }}<div class="small-muted">{{ s.email }}</div></td>
+      <td>{{ s.department }}</td><td>{{ s.class_name }}</td><td>{{ s.registration_date }}</td>
+      <td>{% if s.consent_status == 'granted' %}<span class="badge badge-soft-success">Granted</span>{% else %}<span class="badge badge-soft-warning">Withdrawn</span>{% endif %}</td>
+      <td>{% if s.templates %}<span class="badge badge-soft-success"><i class="bi bi-check2"></i> {{ s.templates }} template(s)</span>
+          {% else %}<span class="badge badge-soft-danger">Not enrolled</span>{% endif %}</td>
+      <td class="text-end text-nowrap">
+        {% if s.consent_status == 'granted' %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('students.enroll', student_id=s.id) }}"><i class="bi bi-camera"></i> {{ 'Re-enroll' if s.templates else 'Enroll face' }}</a>{% endif %}
+        {% if s.templates %}
+        <form class="d-inline" method="post" action="{{ url_for('students.delete_biometrics', student_id=s.id) }}" data-confirm="Delete ALL face data for {{ s.full_name }}? Consent will be marked as withdrawn.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-warning" title="Delete face data only"><i class="bi bi-eraser"></i> Face data</button></form>{% endif %}
+        <form class="d-inline" method="post" action="{{ url_for('students.delete_student', student_id=s.id) }}" data-confirm="PERMANENTLY delete {{ s.full_name }}, their face data and ALL their attendance records?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" title="Delete person"><i class="bi bi-trash"></i></button></form>
+      </td></tr>
+  {% else %}<tr><td colspan="8" class="text-center text-muted py-4">No people found.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endblock %}

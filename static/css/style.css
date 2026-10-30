@@ -1,0 +1,37 @@
+/* style.css - custom look on top of Bootstrap 5 */
+:root { --brand:#3b5bdb; --brand-dark:#2b44a8; --sidebar:#18203a; --bg:#f3f5fb; }
+body { background: var(--bg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.sidebar { width: 250px; background: var(--sidebar); min-height: 100vh; }
+.sidebar .brand { color:#fff; font-weight:700; font-size:1.05rem; padding:1.1rem 1.2rem; border-bottom:1px solid rgba(255,255,255,.08); }
+.sidebar .nav-link { color:#b8c0dc; padding:.65rem 1.2rem; border-radius:0; display:flex; gap:.7rem; align-items:center; }
+.sidebar .nav-link:hover { color:#fff; background:rgba(255,255,255,.06); }
+.sidebar .nav-link.active { color:#fff; background:var(--brand); }
+.sidebar .section { color:#6f7aa3; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; padding:1rem 1.2rem .3rem; }
+.main { flex:1; min-width:0; }
+.topbar { background:#fff; border-bottom:1px solid #e3e7f3; }
+.card { border:0; box-shadow:0 1px 3px rgba(20,30,70,.08); border-radius:.8rem; }
+.stat-card .icon { width:46px; height:46px; border-radius:12px; display:grid; place-items:center; font-size:1.4rem; }
+.stat-card .value { font-size:1.9rem; font-weight:700; line-height:1.1; }
+.table thead th { font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:#6b7390; white-space:nowrap; }
+.badge-soft-success { background:#d3f9d8; color:#2b8a3e; } .badge-soft-danger { background:#ffe3e3; color:#c92a2a; }
+.badge-soft-warning { background:#fff3bf; color:#a66a00; } .badge-soft-info { background:#d0ebff; color:#1864ab; }
+.badge-soft-secondary { background:#e9ecef; color:#495057; }
+.login-wrap { min-height:100vh; display:grid; place-items:center; background:linear-gradient(135deg,#18203a,#3b5bdb); padding:1rem; }
+.login-card { width:100%; max-width:410px; }
+.video-box { position:relative; background:#0b1020; border-radius:.8rem; overflow:hidden; aspect-ratio:4/3; max-width:760px; margin:auto; }
+.video-box video, .video-box canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+.video-placeholder { position:absolute; inset:0; display:grid; place-items:center; color:#8a93b8; text-align:center; padding:1rem; }
+.thumb { width:84px; height:84px; object-fit:cover; border-radius:.5rem; border:2px solid #dde2f3; }
+.thumb-wrap { position:relative; display:inline-block; }
+.thumb-wrap button { position:absolute; top:-6px; right:-6px; border-radius:50%; width:22px; height:22px; padding:0; line-height:1; font-size:.8rem; }
+.event-log { max-height:360px; overflow:auto; }
+.chart-box { position:relative; height:290px; }
+.small-muted { font-size:.8rem; color:#7a829e; }
+@media (max-width: 991.98px) { .sidebar { min-height:auto; } }
+
+/* Fix: Bootstrap's .offcanvas-lg makes the sidebar transparent and stretchy on wide screens */
+@media (min-width: 992px) {
+  .sidebar.offcanvas-lg { background-color: var(--sidebar) !important; width: 250px !important;
+                          flex: 0 0 250px !important; flex-grow: 0 !important; }
+}
+@media (max-width: 991.98px) { .sidebar.offcanvas-lg { background-color: var(--sidebar); } }

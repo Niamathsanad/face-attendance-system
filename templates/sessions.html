@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Attendance sessions{% endblock %}
+{% block content %}
+<h4 class="mb-3">Attendance sessions</h4>
+<div class="row g-3 mb-3"><div class="col-lg-5"><div class="card p-3">
+  <h6>Start a new session</h6>
+  {% if open_session %}
+    <div class="alert alert-info mb-0">Session <strong>{{ open_session['name'] }}</strong> is open. Close it before starting another one.</div>
+  {% else %}
+  <form method="post" action="{{ url_for('attendance.create_session') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-2"><label class="form-label">Session name *</label><input class="form-control" name="name" maxlength="80" required placeholder="e.g. Computer Vision - Lecture 5"></div>
+    <div class="row g-2 mb-2"><div class="col"><label class="form-label">Department (optional)</label>
+      <select class="form-select" name="department"><option value="">All</option>{% for d in groups.departments %}<option>{{ d }}</option>{% endfor %}</select></div>
+      <div class="col"><label class="form-label">Class (optional)</label>
+      <select class="form-select" name="class_name"><option value="">All</option>{% for c in groups.classes %}<option>{{ c }}</option>{% endfor %}</select></div></div>
+    <div class="small-muted mb-3">Date: {{ today }} ({{ tz_name }}). Choosing a department/class limits who is expected, and who can be marked.</div>
+    <button class="btn btn-success"><i class="bi bi-play-circle"></i> Start session</button>
+  </form>{% endif %}
+</div></div></div>
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Session</th><th>Date</th><th>Scope</th><th>Status</th><th>Present / Expected</th><th>Started</th><th>Ended</th><th></th></tr></thead><tbody>
+  {% for r in rows %}{% set st = stats.get(r['id']) %}
+    <tr><td><strong>{{ r['name'] }}</strong></td><td>{{ r['session_date'] }}</td>
+      <td>{{ r['department'] or 'All departments' }} / {{ r['class_name'] or 'All classes' }}</td>
+      <td>{% if r['status'] == 'open' %}<span class="badge badge-soft-success">Open</span>{% else %}<span class="badge badge-soft-secondary">Closed</span>{% endif %}</td>
+      <td>{% if st %}{{ st.present }} / {{ st.expected }} {% if st.percentage is not none %}<span class="small-muted">({{ st.percentage }}%)</span>{% endif %}{% else %}-{% endif %}</td>
+      <td>{{ r['started_at']|localtime }}</td><td>{{ r['ended_at']|localtime }}</td>
+      <td class="text-end text-nowrap">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('attendance.records', session_id=r['id'], date_from=r['session_date'], date_to=r['session_date']) }}">View / correct</a>
+        {% if r['status'] == 'open' %}<form class="d-inline" method="post" action="{{ url_for('attendance.close_session', session_id=r['id']) }}" data-confirm="Close this session? No more attendance can be recorded automatically.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-danger"><i class="bi bi-stop-circle"></i> Close</button></form>{% endif %}
+      </td></tr>
+  {% else %}<tr><td colspan="8" class="text-center text-muted py-4">No sessions yet.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

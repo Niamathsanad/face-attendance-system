@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<h4 class="mb-3">Audit log <span class="small-muted">(latest 300 actions)</span></h4>
+<div class="card"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+  <thead><tr><th>Time ({{ tz_name }})</th><th>Admin</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead><tbody>
+  {% for r in rows %}<tr><td class="text-nowrap">{{ r['created_at']|localtime }}</td><td>{{ r['admin_username'] or '-' }}</td>
+    <td><span class="badge badge-soft-{{ 'danger' if 'failed' in r['action'] or 'deleted' in r['action'] else ('warning' if 'corrected' in r['action'] else 'info') }}">{{ r['action'] }}</span></td>
+    <td>{{ r['entity_type'] or '' }} {{ r['entity_id'] or '' }}</td><td class="small"><code>{{ r['details'] }}</code></td><td>{{ r['ip_address'] }}</td></tr>
+  {% else %}<tr><td colspan="6" class="text-center text-muted py-4">Nothing logged yet.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

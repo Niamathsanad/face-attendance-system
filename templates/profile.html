@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Profile & settings{% endblock %}
+{% block content %}
+<h4 class="mb-3">Profile & settings</h4>
+{% if forced %}<div class="alert alert-warning"><strong>Security:</strong> you are using the default password. Choose a new one to continue.</div>{% endif %}
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card p-3 mb-3"><h6>Profile</h6>
+    <form method="post" action="{{ url_for('auth.update_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-2"><label class="form-label">Username</label><input class="form-control" value="{{ me['username'] }}" disabled></div>
+      <div class="mb-2"><label class="form-label">Full name</label><input class="form-control" name="full_name" value="{{ me['full_name'] }}" required maxlength="100"></div>
+      <div class="mb-3"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="{{ me['email'] }}" maxlength="120"></div>
+      <div class="small-muted mb-2">Last login: {{ me['last_login_at']|localtime or '-' }} ({{ tz }})</div>
+      <button class="btn btn-primary">Save profile</button></form></div>
+    <div class="card p-3"><h6>Change password</h6>
+    <form method="post" action="{{ url_for('auth.change_password') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-2"><label class="form-label">Current password</label><input class="form-control" type="password" name="current_password" required></div>
+      <div class="mb-2"><label class="form-label">New password</label><input class="form-control" type="password" name="new_password" required minlength="8" maxlength="128"></div>
+      <div class="mb-3"><label class="form-label">Confirm new password</label><input class="form-control" type="password" name="confirm_password" required></div>
+      <div class="small-muted mb-2">At least 8 characters with upper-case, lower-case and a digit.</div>
+      <button class="btn btn-warning">Change password</button></form></div></div>
+  <div class="col-lg-6"><div class="card p-3 mb-3"><h6>Recognition settings</h6>
+    <form method="post" action="{{ url_for('auth.update_settings') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label">Similarity threshold (cosine): {{ specs.similarity_threshold[1] }} - {{ specs.similarity_threshold[2] }}</label>
+        <input class="form-control" type="number" step="0.01" name="similarity_threshold" value="{{ settings.similarity_threshold }}">
+        <div class="small-muted">Higher = stricter (fewer false accepts, more false rejects). Tune it with your own test data.</div></div>
+      <div class="mb-3"><label class="form-label">Minimum margin over 2nd-best person</label>
+        <input class="form-control" type="number" step="0.01" name="min_margin" value="{{ settings.min_margin }}"></div>
+      <div class="mb-3"><label class="form-label">Consecutive frames required before marking (1-5)</label>
+        <input class="form-control" type="number" name="confirmations_required" value="{{ settings.confirmations_required }}"></div>
+      <div class="mb-3"><label class="form-label">Minimum images per enrollment (1-10)</label>
+        <input class="form-control" type="number" name="min_enroll_images" value="{{ settings.min_enroll_images }}"></div>
+      <button class="btn btn-primary">Save settings</button></form></div>
+    <div class="card p-3"><h6>System information</h6><table class="table table-sm mb-0">
+      <tr><td>Face model</td><td><code>{{ model_name }}</code> (InsightFace, runs on CPU)</td></tr>
+      <tr><td>Timezone</td><td>{{ tz }} (stored in UTC, displayed in this zone)</td></tr>
+      <tr><td>Liveness detection</td><td><span class="badge badge-soft-warning">Not implemented</span> - photos/videos of a person may fool the system</td></tr></table></div></div>
+</div>
+{% endblock %}

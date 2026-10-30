@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div><h4 class="mb-0">Dashboard</h4><div class="small-muted">Live figures from the database for {{ stats.date }} ({{ stats.timezone }})</div></div>
+  <a href="{{ url_for('attendance.live') }}" class="btn btn-primary"><i class="bi bi-camera-video"></i> Open live recognition</a>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card p-3"><div class="d-flex justify-content-between">
+    <div><div class="small-muted">Registered people</div><div class="value" id="statTotal">{{ stats.total_registered }}</div></div>
+    <div class="icon badge-soft-info"><i class="bi bi-people"></i></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card p-3"><div class="d-flex justify-content-between">
+    <div><div class="small-muted">Present today</div><div class="value" id="statPresent">{{ stats.present_today }}</div></div>
+    <div class="icon badge-soft-success"><i class="bi bi-check2-circle"></i></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card p-3"><div class="d-flex justify-content-between">
+    <div><div class="small-muted">Absent today</div><div class="value" id="statAbsent">{{ stats.absent_today }}</div></div>
+    <div class="icon badge-soft-danger"><i class="bi bi-x-circle"></i></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card p-3"><div class="d-flex justify-content-between">
+    <div><div class="small-muted">Attendance today</div><div class="value" id="statPct">{{ '-' if stats.percentage_today is none else stats.percentage_today ~ '%' }}</div>
+      <div class="small-muted" id="statNote"></div></div>
+    <div class="icon badge-soft-warning"><i class="bi bi-percent"></i></div></div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-7"><div class="card p-3"><h6>Daily attendance - last 14 days</h6><div class="chart-box"><canvas id="dailyChart"></canvas></div></div></div>
+  <div class="col-lg-5"><div class="card p-3"><h6>Weekly attendance % - last 8 weeks</h6><div class="chart-box"><canvas id="weeklyChart"></canvas></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-5"><div class="card p-3"><h6>Monthly summary</h6><div class="chart-box" style="height:220px"><canvas id="monthlyChart"></canvas></div>
+    <div class="table-responsive mt-2"><table class="table table-sm mb-0"><thead><tr><th>Month</th><th>Expected</th><th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody id="monthlyBody"></tbody></table></div></div></div>
+  <div class="col-lg-7"><div class="card p-3"><h6>Recent attendance records</h6><div class="table-responsive">
+    <table class="table align-middle mb-0"><thead><tr><th>Person</th><th>Status</th><th>Type</th><th>Session</th><th>Time ({{ stats.timezone }})</th></tr></thead>
+    <tbody id="recentBody"><tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr></tbody></table></div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

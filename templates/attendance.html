@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Attendance records{% endblock %}
+{% block content %}
+<h4 class="mb-3">Attendance records</h4>
+<form class="card p-3 mb-3" method="get"><div class="row g-2">
+  <div class="col-md-2"><label class="form-label small-muted mb-0">From</label><input class="form-control" type="date" name="date_from" value="{{ f.date_from }}"></div>
+  <div class="col-md-2"><label class="form-label small-muted mb-0">To</label><input class="form-control" type="date" name="date_to" value="{{ f.date_to }}"></div>
+  <div class="col-md-2"><label class="form-label small-muted mb-0">Department</label><select class="form-select" name="department"><option value="">All</option>
+    {% for d in groups.departments %}<option {{ 'selected' if d == f.department }}>{{ d }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label small-muted mb-0">Class</label><select class="form-select" name="class_name"><option value="">All</option>
+    {% for c in groups.classes %}<option {{ 'selected' if c == f.class_name }}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label small-muted mb-0">Status</label><select class="form-select" name="status"><option value="">All</option>
+    <option {{ 'selected' if f.status == 'Present' }}>Present</option><option {{ 'selected' if f.status == 'Absent' }}>Absent</option></select></div>
+  <div class="col-md-2"><label class="form-label small-muted mb-0">Session</label><select class="form-select" name="session_id"><option value="">All</option>
+    {% for s in sessions_in_range %}<option value="{{ s['id'] }}" {{ 'selected' if f.session_id|string == s['id']|string }}>{{ s['session_date'] }} - {{ s['name'] }}</option>{% endfor %}</select></div>
+  <div class="col-md-6"><input class="form-control" name="q" value="{{ f.q }}" placeholder="Search by ID or name"></div>
+  <div class="col-md-3 d-grid"><button class="btn btn-primary"><i class="bi bi-funnel"></i> Apply filters</button></div>
+  <div class="col-md-3 d-grid"><a class="btn btn-outline-secondary" href="{{ url_for('attendance.records') }}">Reset (today)</a></div>
+</div></form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Expected</div><div class="fs-4 fw-bold">{{ summary.expected }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Present</div><div class="fs-4 fw-bold text-success">{{ summary.present }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Absent</div><div class="fs-4 fw-bold text-danger">{{ summary.absent }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="small-muted">Attendance %</div><div class="fs-4 fw-bold">{{ '-' if summary.percentage is none else summary.percentage ~ '%' }}</div></div></div>
+</div>
+
+<div class="card mb-3"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Date</th><th>Session</th><th>ID</th><th>Name</th><th>Dept / Class</th><th>Status</th><th>Record type</th><th>Time ({{ tz_name }})</th><th>Score</th><th></th></tr></thead><tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.session_date }}</td><td>{{ r.session_name }}{% if r.session_status == 'open' %} <span class="badge badge-soft-success">open</span>{% endif %}</td>
+      <td><strong>{{ r.student_code }}</strong></td><td>{{ r.full_name }}</td><td>{{ r.department }} / {{ r.class_name }}</td>
+      <td><span class="badge badge-soft-{{ 'success' if r.status == 'Present' else 'danger' }}">{{ r.status }}</span></td>
+      <td>{% if r.record_type == 'Manual correction' %}<span class="badge badge-soft-warning" title="{{ r.correction_reason or '' }}"><i class="bi bi-pencil-square"></i> Manual correction</span>
+          {% if r.original_status %}<div class="small-muted">was {{ r.original_status }}</div>{% endif %}
+          {% elif r.record_type == 'Recorded by camera' %}<span class="badge badge-soft-info"><i class="bi bi-camera"></i> Recorded by camera</span>
+          {% else %}<span class="badge badge-soft-secondary">No record</span>{% endif %}</td>
+      <td>{{ r.marked_local }}</td><td>{{ '' if r.confidence != r.confidence or r.confidence is none else '%.2f'|format(r.confidence) }}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#correctModal"
+          data-session="{{ r.session_id }}" data-student="{{ r.student_id }}" data-code="{{ r.student_code }}" data-name="{{ r.full_name }}"
+          data-sessionname="{{ r.session_name }}" data-newstatus="{{ 'Absent' if r.status == 'Present' else 'Present' }}">
+          <i class="bi bi-pencil"></i> Correct</button></td></tr>
+  {% else %}<tr><td colspan="10" class="text-center text-muted py-4">No records for these filters. Attendance appears here once a session exists for the selected dates.</td></tr>{% endfor %}
+</tbody></table></div></div>
+
+<div class="card"><div class="card-body"><h6>Attendance percentage per person (selected filters)</h6>
+<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>ID</th><th>Name</th><th>Dept / Class</th><th>Sessions</th><th>Present</th><th>Absent</th><th style="min-width:180px">Attendance</th></tr></thead><tbody>
+  {% for p in percentages %}<tr><td>{{ p.student_code }}</td><td>{{ p.full_name }}</td><td>{{ p.department }} / {{ p.class_name }}</td><td>{{ p.sessions }}</td><td>{{ p.present }}</td><td>{{ p.absent }}</td>
+    <td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:8px"><div class="progress-bar {{ 'bg-success' if p.percentage >= 75 else ('bg-warning' if p.percentage >= 50 else 'bg-danger') }}" style="width:{{ p.percentage }}%"></div></div><span class="small">{{ p.percentage }}%</span></div></td></tr>
+  {% else %}<tr><td colspan="7" class="text-center text-muted py-3">Nothing to calculate yet.</td></tr>{% endfor %}
+</tbody></table></div></div></div>
+
+<div class="modal fade" id="correctModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="post" action="{{ url_for('attendance.correct') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="session_id"><input type="hidden" name="student_id">
+  <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+  <div class="modal-header"><h5 class="modal-title">Correct attendance</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><p class="mb-2"><strong id="correctWho"></strong></p>
+    <label class="form-label">New status</label><select class="form-select mb-3" name="status"><option>Present</option><option>Absent</option></select>
+    <label class="form-label">Reason (required, saved in the audit log)</label><input class="form-control" name="reason" maxlength="200" required minlength="3" placeholder="e.g. Camera could not see student; teacher confirmed presence">
+    <div class="small-muted mt-2">The original value is kept and the row will be labelled "Manual correction".</div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save correction</button></div>
+</form></div></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>{% endblock %}
